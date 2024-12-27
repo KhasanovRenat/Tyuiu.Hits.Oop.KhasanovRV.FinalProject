@@ -1,0 +1,123 @@
+﻿@page "/create-task/{ProjectId:int}"
+@page "/projects/{ProjectId:int}/tasks/{TaskId:int}"
+@using FinalProject.Data.Interfaces
+@using FinalProject.Data
+@inject IDataServiceProject dataP
+@inject IDataServiceTaskItem dataT
+@inject NavigationManager navigate
+
+<h3>Создать проект</h3>
+
+@if (task != null)
+{
+    <!--Форма задачи-->
+    <EditForm Model="task" FormName="TaskForm" OnValidSubmit="ValidSubmit">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <h2>Новая задача</h2>
+
+        <!--ID (скрыт)-->
+        <InputNumber @bind-Value="task.Id" hidden />
+
+        <!--Название-->
+        <div class="form-group">
+            <label for="name">Название</label>
+            <InputText id="name" class="form-control" @bind-Value="task.Name" />
+            <ValidationMessage For="() => task.Name" />
+        </div>
+
+        <!--Описание-->
+        <div class="form-group">
+            <label for="description">Описание</label>
+            <InputTextArea id="description" class="form-control" @bind-Value="task.Description" />
+            <ValidationMessage For="() => task.Description" />
+        </div>
+
+        <!--Приоритет-->
+        <div class="form-group">
+            <label for="priority">Приоритет</label>
+            <InputText id="priority" class="form-control" @bind-Value="task.Priority" />
+            <ValidationMessage For="() => task.Priority" />
+        </div>
+
+        <!--Статус-->
+        <div class="form-group">
+            <label for="status">Статус</label>
+            <InputSelect id="status" class="form-control" @bind-Value="task.Status">
+                <option value="">Выберите статус</option>
+                @foreach (var status in TaskStatuses.Statuses)
+                {
+                    <option value="@status">@status</option>
+                }
+            </InputSelect>
+            <ValidationMessage For="() => task.Status" />
+        </div>
+
+        <!--Срок сдачи-->
+        <div class="form-group">
+            <label for="dueDate">Срок сдачи</label>
+            <InputDate id="dueDate" class="form-control" @bind-Value="task.DueDate" />
+            <ValidationMessage For="() => task.DueDate" />
+        </div>
+
+        <!--Расчетное время-->
+        <div class="form-group">
+            <label for="estimatedHours">Расчетное время</label>
+            <InputNumber id="estimatedHours" class="form-control" @bind-Value="task.EstimatedHours" />
+            <ValidationMessage For="() => task.EstimatedHours" />
+        </div>
+
+        <!--Кнопки-->
+        <div class="btn-group">
+            <button type="submit" class="btn btn-primary">Сохранить</button>
+            <button class="btn btn-secondary" @onclick="Cancel">Отмена</button>
+        </div>
+    </EditForm>
+}
+
+@code {
+    [Parameter]
+    public int ProjectId { get; set; }
+    [Parameter]
+    public int TaskId { get; set; }
+
+
+    [SupplyParameterFromForm]
+    TaskItem? task { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        if (task == null)
+        {
+            task = new();
+            if (TaskId != 0)
+            {
+                var src = await dataT.GetTaskAsync(TaskId);
+                task.Id = src.Id;
+                task.Name = src.Name;
+                task.Description = src.Description;
+                task.Priority = src.Priority;
+                task.Status = src.Status;
+                task.DueDate = src.DueDate;
+                task.EstimatedHours = src.EstimatedHours;
+                task.ProjectId = src.ProjectId;
+            }
+
+        }
+
+    }
+
+    async Task ValidSubmit()
+    {
+        task.ProjectId = ProjectId;
+        await dataT.SaveTaskAsync(task!);
+        navigate.NavigateTo($"/project-tasks/{ProjectId}");
+    }
+
+    private async Task Cancel()
+    {
+        navigate.NavigateTo($"/project-tasks/{ProjectId}");
+    }
+}

@@ -1,0 +1,86 @@
+﻿@page "/create-project"
+@page "/projects/{Id:int}"
+@using FinalProject.Data.Interfaces
+@using FinalProject.Data
+@inject IDataServiceProject dataP
+@inject NavigationManager navigate
+
+<h3>Создать проект</h3>
+
+@if (project != null)
+{
+    <!--Форма проекта-->
+    <EditForm Model="project" FormName="ProjectForm" OnValidSubmit="ValidSubmit">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <h2>Новый проект</h2>
+        <!--ID (скрыт)-->
+        <InputNumber @bind-Value="project.Id" hidden />
+
+        <!--Название-->
+        <div class="form-group">
+            <label>Название проекта</label>
+            <InputText Class="form-control" @bind-Value="project.Name" />
+            <ValidationMessage For="() => project.Name" />
+        </div>
+
+        <!--Статус-->
+        <div class="form-group">
+            <label>Статус проекта</label>
+            <InputSelect Class="form-control" @bind-Value="project.Status">
+                <option value="">Выберите статус</option>
+                @foreach (var status in ProjectStatuses.Statuses)
+                {
+                    <option value="@status">@status</option>
+                }
+            </InputSelect>
+            <ValidationMessage For="() => project.Status" />
+        </div>
+
+        <!--Кнопки-->
+        <div class="btn-group">
+            <button class ="btn btn-primary m-2" type="submit">Сохранить</button>
+            <a class=" btn btn-primary m-2" href="/">Отмена</a>
+        </div>
+    </EditForm>
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    [SupplyParameterFromForm]
+    Project? project { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        if (project == null)
+        {
+            project = new();
+            if (Id != 0)
+            {
+                var src = await dataP.GetProjectAsync(Id);
+                project.Id = src.Id;
+                project.Name = src.Name;
+                project.Status = src.Status;
+                project.Tasks = src.Tasks;
+            }
+        }
+    }
+
+    async Task ValidSubmit()
+    {
+        if (Id != 0)
+        {
+            var existingProject = await dataP.GetProjectAsync(Id);
+            project.Tasks = existingProject.Tasks;
+        }
+
+        await dataP.SaveProjectAsync(project!);
+        var updatedProject = await dataP.GetProjectAsync(project.Id);
+        project.Tasks = updatedProject.Tasks;
+        navigate.NavigateTo("/");
+    }
+}

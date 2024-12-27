@@ -1,0 +1,98 @@
+﻿@page "/project-tasks/{ProjectId:int}"
+@rendermode InteractiveServer
+@inject IDataServiceTaskItem dataT
+@inject NavigationManager navigate
+
+<h3>Задачи проекта</h3>
+<button class ="btn btn-primary" @onclick="CreateTask">Создать задачу</button>
+
+@if (tasks != null) 
+{
+    <div class="row">
+
+        <!--Столбец предстоящих задач-->
+        <div class="col">
+            <h4>Предстоящие задачи</h4>
+            @foreach (var task in tasks.Where(t => t.Status == "Предстоящие"))
+            {
+                <div class="card">
+                    <h5>@task.Name</h5>
+                    <p>@task.Description</p>
+                    <p>Приоритет: @task.Priority</p>
+                    <p>Срок сдачи: @task.DueDate.ToShortDateString()</p>
+                    <p>Расчетное время: @task.EstimatedHours часов</p>
+                    <button class="btn btn-primary" @onclick="() => EditTask(task.Id)">Редактировать</button>
+                    <button class="btn btn-primary" @onclick="async () => await DeleteTask(task.Id)">Удалить</button>
+                </div>
+            }
+        </div>
+
+        <!--Столбец задач в процессе-->
+        <div class="col">
+            <h4>Задачи в процессе</h4>
+            @foreach (var task in tasks.Where(t => t.Status == "В процессе"))
+            {
+                <div class="card">
+                    <h5>@task.Name</h5>
+                    <p>@task.Description</p>
+                    <p>Приоритет: @task.Priority</p>
+                    <p>Срок сдачи: @task.DueDate.ToShortDateString()</p>
+                    <p>Расчетное время: @task.EstimatedHours часов</p>
+                    <button class="btn btn-primary" @onclick="() => EditTask(task.Id)">Редактировать</button>
+                    <button class="btn btn-primary" @onclick="async () => await DeleteTask(task.Id)">Удалить</button>
+                </div>
+            }
+        </div>
+
+        <!--Столбец выполненных задач-->
+        <div class="col">
+            <h4>Выполненные задачи</h4>
+            @foreach (var task in tasks.Where(t => t.Status == "Выполненные"))
+            {
+                <div class="card">
+                    <h5>@task.Name</h5>
+                    <p>@task.Description</p>
+                    <p>Приоритет: @task.Priority</p>
+                    <p>Срок сдачи: @task.DueDate.ToShortDateString()</p>
+                    <p>Расчетное время: @task.EstimatedHours часов</p>
+                    <button class="btn btn-primary" @onclick="() => EditTask(task.Id)">Редактировать</button>
+                    <button class="btn btn-primary" @onclick="async () => await DeleteTask(task.Id)">Удалить</button>
+                </div>
+            }
+        </div>
+    </div>
+}
+else
+{
+    <tr>
+        <td colspan="5">Loading...</td>
+    </tr>
+}
+
+@code {
+    [Parameter]
+    public int ProjectId { get; set; }
+
+    IEnumerable<TaskItem>? tasks;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        tasks = await dataT.GetTasksByProjectIdAsync(ProjectId);
+    }
+
+    private void CreateTask()
+    {
+        navigate.NavigateTo($"/create-task/{ProjectId}");
+    }
+
+    private void EditTask(int TaskId)
+    {
+        navigate.NavigateTo($"/projects/{ProjectId}/tasks/{TaskId}");
+    }
+
+    async Task DeleteTask(int TaskId)
+    {
+        await dataT.DeleteTaskAsync(TaskId);
+        tasks = await dataT.GetTasksByProjectIdAsync(ProjectId);
+    }
+}
