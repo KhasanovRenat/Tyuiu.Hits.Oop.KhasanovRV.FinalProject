@@ -1,8 +1,10 @@
 ﻿@page "/"
+@using Microsoft.AspNetCore.Authorization
 @rendermode InteractiveServer
 @inject IDataServiceProject dataP
 @inject NavigationManager navigate
 
+@attribute [Authorize]
 <h3>Проекты</h3>
 
 <div class="btn-group m-2">
